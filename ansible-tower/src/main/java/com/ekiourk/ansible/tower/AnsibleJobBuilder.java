@@ -23,7 +23,7 @@ import java.io.IOException;
  * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked
  * and a new {@link AnsibleJobBuilder} is created. The created
  * instance is persisted to the project configuration XML by using
- * XStream, so this allows you to use instance fields (like {@link #name})
+ * XStream, so this allows you to use instance fields (like {@link #jobName})
  * to remember the configuration.
  *
  * <p>
@@ -34,19 +34,19 @@ import java.io.IOException;
  */
 public class AnsibleJobBuilder extends Builder {
 
-    private final String name;
+    private final String jobName;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public AnsibleJobBuilder(String name) {
-        this.name = name;
+    public AnsibleJobBuilder(String jobName) {
+        this.jobName = jobName;
     }
 
     /**
      * We'll use this from the <tt>config.jelly</tt>.
      */
-    public String getName() {
-        return name;
+    public String getJobName() {
+        return jobName;
     }
 
     @Override
@@ -55,10 +55,10 @@ public class AnsibleJobBuilder extends Builder {
         // Since this is a dummy, we just say 'hello world' and call that a build.
 
         // This also shows how you can consult the global configuration of the builder
-        if (getDescriptor().getUseFrench())
-            listener.getLogger().println("Bonjour, "+name+"!");
+        if (getDescriptor().getAnsibleDryRun())
+            listener.getLogger().println("/job/"+jobName);
         else
-            listener.getLogger().println("Hello, "+name+"!");
+            listener.getLogger().println("/job/"+jobName);
         return true;
     }
 
@@ -87,22 +87,22 @@ public class AnsibleJobBuilder extends Builder {
          * <p>
          * If you don't want fields to be persisted, use <tt>transient</tt>.
          */
-        private boolean useFrench;
+        private boolean ansibleDryRun;
 
         /**
-         * Performs on-the-fly validation of the form field 'name'.
+         * Performs on-the-fly validation of the form field 'jobName'.
          *
          * @param value
          *      This parameter receives the value that the user has typed.
          * @return
          *      Indicates the outcome of the validation. This is sent to the browser.
          */
-        public FormValidation doCheckName(@QueryParameter String value)
+        public FormValidation doCheckJobName(@QueryParameter String value)
                 throws IOException, ServletException {
             if (value.length() == 0)
-                return FormValidation.error("Please set a name");
-            if (value.length() < 4)
-                return FormValidation.warning("Isn't the name too short?");
+                return FormValidation.error("Please set a job name");
+            if (value.length() < 2)
+                return FormValidation.warning("Isn't the job name too short?");
             return FormValidation.ok();
         }
 
@@ -115,28 +115,28 @@ public class AnsibleJobBuilder extends Builder {
          * This human readable name is used in the configuration screen.
          */
         public String getDisplayName() {
-            return "Say hello world";
+            return "Run job on tower";
         }
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             // To persist global configuration information,
             // set that to properties and call save().
-            useFrench = formData.getBoolean("useFrench");
+            ansibleDryRun = formData.getBoolean("ansibleDryRun");
             // ^Can also use req.bindJSON(this, formData);
-            //  (easier when there are many fields; need set* methods for this, like setUseFrench)
+            //  (easier when there are many fields; need set* methods for this, like setAnsibleDryRun)
             save();
             return super.configure(req,formData);
         }
 
         /**
-         * This method returns true if the global configuration says we should speak French.
+         * This method returns true if the global configuration says we should run ansible jobs in dry mode
          *
          * The method name is bit awkward because global.jelly calls this method to determine
          * the initial state of the checkbox by the naming convention.
          */
-        public boolean getUseFrench() {
-            return useFrench;
+        public boolean getAnsibleDryRun() {
+            return ansibleDryRun;
         }
     }
 }
